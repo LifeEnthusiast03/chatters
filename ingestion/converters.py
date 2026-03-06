@@ -11,12 +11,19 @@ def telegram_to_canonical(update: Update) -> Optional[CanonicalEvent]:
     
     msg: Message = update.message
     
-    # Extract sender information
-    sender = Sender(
-        id=str(msg.from_user.id),
-        display_name=msg.from_user.first_name or "Unknown",
-        username=msg.from_user.username
-    )
+    # Extract sender information (some messages might not have from_user)
+    if msg.from_user:
+        sender = Sender(
+            id=str(msg.from_user.id),
+            display_name=msg.from_user.first_name or "Unknown",
+            username=msg.from_user.username
+        )
+    else:
+        sender = Sender(
+            id="0",
+            display_name="System",
+            username=None
+        )
     
     # Determine event type and build content
     event_type = "text_message"
@@ -74,16 +81,45 @@ def telegram_to_canonical(update: Update) -> Optional[CanonicalEvent]:
         ))
         text = msg.caption
     
+    elif msg.new_chat_members:
+        event_type = "join"
+        members = ", ".join([m.first_name for m in msg.new_chat_members])
+        description = f"{members} joined the group"
+        text = description
+    
+    elif msg.left_chat_member:
+        event_type = "system_alert"
+        description = f"{msg.left_chat_member.first_name} left the group"
+        text = description
+    
+    elif msg.new_chat_title:
+        event_type = "system_alert"
+        description = f"Group title changed to: {msg.new_chat_title}"
+        text = msg.new_chat_title
+    
+    elif msg.pinned_message:
+        event_type = "system_alert"
+        description = f"{sender.display_name} pinned a message"
+        text = "Message pinned"
+    
     else:
         event_type = "system_alert"
         description = f"Other message type from {sender.display_name}"
     
     # Build content
+    forwarded_from = None
+    if hasattr(msg, 'forward_origin') and msg.forward_origin:
+        # Handle different forward origin types
+        if hasattr(msg.forward_origin, 'sender_user') and msg.forward_origin.sender_user:
+            forwarded_from = msg.forward_origin.sender_user.username or msg.forward_origin.sender_user.first_name
+        elif hasattr(msg.forward_origin, 'sender_user_name'):
+            forwarded_from = msg.forward_origin.sender_user_name
+    
     content = Content(
         text=text,
         media_items=media_items if media_items else None,
         reply_to_id=str(msg.reply_to_message.message_id) if msg.reply_to_message else None,
-        forwarded_from=msg.forward_from.username if msg.forward_from else None
+        forwarded_from=forwarded_from
     )
     
     # Create canonical event
