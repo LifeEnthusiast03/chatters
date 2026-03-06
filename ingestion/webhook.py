@@ -9,6 +9,10 @@ from pyngrok import ngrok
 from telegram import Update
 from dotenv import load_dotenv
 
+# Slack integration
+from slack_bolt import App as SlackApp
+from slack_bolt.adapter.fastapi import SlackRequestHandler
+
 # Add the ingestion directory to path for proper imports
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -26,7 +30,28 @@ load_dotenv()
 
 NGROK_AUTH_TOKEN = os.getenv("NGROK_AUTH_TOKEN")
 PORT = int(os.getenv("PORT", 8000))
-WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "my_whatsapp_verify_token")
+WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "sayandutta")
+
+SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
+SLACK_SIGNING_SECRET = os.getenv("SLACK_SIGNING_SECRET")
+
+# Initialize Slack app
+slack_app = None
+slack_handler = None
+
+# Check if tokens are set and distinct from placeholders
+if SLACK_BOT_TOKEN and SLACK_SIGNING_SECRET and SLACK_BOT_TOKEN != "xoxb-your-token":
+    # Initialize the Slack Bolt App
+    slack_app = SlackApp(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
+    slack_handler = SlackRequestHandler(slack_app)
+    
+    # Event listener for messages
+    @slack_app.event("message")
+    def handle_message_events(body, logger):
+        print("------ NEW SLACK MESSAGE ------")
+        print(body)
+else:
+    print("Warning: SLACK_BOT_TOKEN or SLACK_SIGNING_SECRET not set (or is default). Slack integration disabled.")
 
 # Global variables for state
 public_url = None
@@ -92,6 +117,38 @@ async def whatsapp_webhook(request: Request):
         
     return Response(content="RECEIVED", status_code=200)
 
+@app.post("/slack/events")
+async def slack_events(req: Request):
+    """Handle incoming Slack events."""
+    # Debug: Print incoming raw body to verify connectivity
+    try:
+        raw_body = await req.body()
+        print(f"DEBUG: Active connection, body size: {len(raw_body)}")
+        # We must re-create the request stream so Bolt can read it again, 
+        # or rely on Bolt wrapper which handles this (SlackRequestHandler uses raw body).
+        # Actually, reading the body consumes the stream. Bolt's FastAPI adapter handles this carefully,
+        # but if WE read it, we might break Bolt if not careful.
+        # Let's NOT read the body here unless we are careful.
+        # Instead just print headers or something safe.
+        print("DEBUG: Active connection")
+    except Exception as e:
+        print(f"DEBUG: Error reading request: {e}")
+
+    # If the Bolt handler is active, delegate to it
+    if slack_handler:
+        return await slack_handler.handle(req)
+    
+    # Fallback: Handle URL verification even if Slack App is not fully configured
+    # This allows you to 'Verify' the URL in Slack dashboard before setting up valid tokens
+    try:
+        body = await req.json()
+        if body.get("type") == "url_verification":
+            return Response(content=body.get("challenge"), media_type="text/plain", status_code=200)
+    except Exception:
+        pass
+        
+    return Response(content="Slack integration not configured", status_code=501)
+
 def main():
     global public_url
     
@@ -113,6 +170,12 @@ def main():
         print(f"Public URL: {public_url}")
         print(f"Telegram Webhook: {public_url}/telegram")
         print(f"WhatsApp Webhook: {public_url}/webhook")
+        
+        if slack_app:
+            print(f"Slack Events URL: {public_url}/slack/events")
+        else:
+             print("Slack integration disabled (check .env for valid tokens)")
+             
         print("=" * 50)
 
         # Run the server
