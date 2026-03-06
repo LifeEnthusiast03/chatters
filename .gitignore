@@ -56,6 +56,10 @@ db.sqlite3-journal
 .env.local
 .env.*.local
 
+# Downloads folder
+ingestion/downloads/
+downloads/
+
 # IDEs
 .vscode/
 .idea/
