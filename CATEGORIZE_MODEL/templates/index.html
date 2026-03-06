@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Text Predictor</title>
+</head>
+<body>
+    <h1>Enter Text</h1>
+    <form action="/predict" method="POST">
+        <textarea name="text" rows="4" cols="50" placeholder="Enter your text here..."></textarea><br><br>
+        <input type="submit" value="Predict">
+    </form>
+    {% if prediction %}
+        <h2>Prediction: {{ prediction }}</h2>
+    {% endif %}
+</body>
+</html>
