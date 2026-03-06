@@ -1,0 +1,64 @@
+services:
+  jobmanager:
+    image: flink:1.18-scala_2.12
+    container_name: flink-jobmanager
+    hostname: jobmanager
+    ports:
+      - "8081:8081"   # Flink Web UI
+      - "6123:6123"   # RPC port
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        jobmanager.rpc.port: 6123
+        jobmanager.memory.process.size: 1600m
+        parallelism.default: 2
+    networks:
+      - double-slash-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/overview > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  taskmanager:
+    image: flink:1.18-scala_2.12
+    container_name: flink-taskmanager
+    hostname: taskmanager
+    depends_on:
+      jobmanager:
+        condition: service_healthy
+    command: taskmanager
+    # scale: 2 # Scale is often better handled by docker compose up --scale, but keeping implicit here if needed or removed to defer to runtime. The original file had no scale instruction in the services block I read? 
+    # Wait, the original had 'scale: 2' in the snippet I tried to replace, but looking at my read_file output which was lines 1-50, I don't see 'scale: 2' in the taskmanager service definition.
+    # Ah, I see `scale: 2` in my FAILED replace_string_in_file call but NOT in the read_file output.
+    # In read_file output (lines 1-50):
+    #   taskmanager:
+    #     image: flink:1.18-scala_2.12
+    #     ...
+    #     command: taskmanager
+    #     environment: ...
+    # No `scale: 2`. So I won't include it to be safe.
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        jobmanager.rpc.port: 6123
+        taskmanager.memory.process.size: 1728m
+        taskmanager.numberOfTaskSlots: 4
+        parallelism.default: 2
+    networks:
+      - double-slash-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://jobmanager:8081/taskmanagers > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+networks:
+  double-slash-net:
+    name: double-slash-net
+    driver: bridge
