@@ -67,12 +67,3 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Create the application (bot)
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(MessageHandler(filters.ALL, handle_message))
-
-
-if __name__ == "__main__":
-    print("Starting bot in polling mode...")
-    print("Bot is running. Press Ctrl+C to stop.")
-    print("-" * 50)
-    
-    # Run the bot in polling mode (continuously check for messages)
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
