@@ -3,7 +3,8 @@ import sys
 import uvicorn
 from contextlib import asynccontextmanager
 from pathlib import Path
-
+from pymodel import CanonicalEvent, Sender, Content, MediaItem
+from converters import whatsapp_to_canonical
 from fastapi import FastAPI, Request, Response
 from pyngrok import ngrok
 from telegram import Update
@@ -61,22 +62,6 @@ async def telegram_webhook(request: Request):
         print(f"Error processing Telegram update: {e}")
     return Response(content="OK", status_code=200)
 
-@app.get("/webhook")
-async def whatsapp_verify(request: Request):
-    """Handle WhatsApp webhook verification (GET request from Meta)."""
-    mode = request.query_params.get("hub.mode")
-    token = request.query_params.get("hub.verify_token")
-    challenge = request.query_params.get("hub.challenge")
-
-    if mode and token:
-        if mode == "subscribe" and token == WHATSAPP_VERIFY_TOKEN:
-            print("WEBHOOK_VERIFIED")
-            # Return the challenge token as plain text
-            return Response(content=challenge, media_type="text/plain", status_code=200)
-        else:
-            return Response(content="Verification failed", status_code=403)
-    return Response(content="Hello world", status_code=200)
-
 @app.post("/webhook")
 async def whatsapp_webhook(request: Request):
     """Handle incoming WhatsApp messages (POST request from Meta)."""
@@ -85,10 +70,22 @@ async def whatsapp_webhook(request: Request):
         print("------ NEW WHATSAPP MESSAGE ------")
         print(data)
         
-        # Add your WhatsApp message processing logic here
+        # Convert to canonical event
+        canonical_event = whatsapp_to_canonical(data)
+        
+        if canonical_event:
+            print("\n------ CANONICAL EVENT ------")
+            print(canonical_event.model_dump_json(indent=2))
+            
+            # TODO: Send canonical_event to your processing pipeline
+            # e.g., await send_to_queue(canonical_event)
+        else:
+            print("Could not convert WhatsApp message to canonical event")
         
     except Exception as e:
         print(f"Error processing WhatsApp message: {e}")
+        import traceback
+        traceback.print_exc()
         
     return Response(content="RECEIVED", status_code=200)
 
