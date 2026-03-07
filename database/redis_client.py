@@ -7,7 +7,7 @@ load_dotenv()
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST"),
     port=os.getenv("REDIS_PORT"),
-    username=os.getenv("REDIS_USERNAME"),
-    password=os.getenv("REDIS_PASSWORD"),
+    username=os.getenv("REDIS_USERNAME") or None,
+    password=os.getenv("REDIS_PASSWORD") or None,
     decode_responses=True
 )

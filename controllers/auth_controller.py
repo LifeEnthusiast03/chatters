@@ -1,14 +1,14 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from model import models
+from model import model
 from schema import schemas
 from security.jwt_auth import hash_password, verify_password, create_access_token
 
 
 def signup(user: schemas.UserSignup, db: Session):
 
-    existing_user = db.query(models.User).filter(
-        models.User.email == user.email
+    existing_user = db.query(model.User).filter(
+        model.User.email == user.email
     ).first()
 
     if existing_user:
@@ -16,7 +16,7 @@ def signup(user: schemas.UserSignup, db: Session):
 
     hashed_pw = hash_password(user.password)
 
-    new_user = models.User(
+    new_user = model.User(
         username=user.username,
         email=user.email,
         password=hashed_pw
@@ -31,8 +31,8 @@ def signup(user: schemas.UserSignup, db: Session):
 
 def login(user: schemas.UserLogin, db: Session):
 
-    db_user = db.query(models.User).filter(
-        models.User.email == user.email
+    db_user = db.query(model.User).filter(
+        model.User.email == user.email
     ).first()
 
     if not db_user:
