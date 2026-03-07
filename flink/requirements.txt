@@ -1,4 +1,5 @@
-apache-flink==1.18.0
+# Python clustering service dependencies
 numpy
 sentence-transformers
 redis
+flask
