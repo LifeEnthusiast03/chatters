@@ -4,12 +4,12 @@ import uvicorn
 from contextlib import asynccontextmanager
 from pathlib import Path
 from pymodel import CanonicalEvent, Sender, Content, MediaItem
-from converters import whatsapp_to_canonical
+from converters import whatsapp_to_canonical, slack_to_canonical
 from fastapi import FastAPI, Request, Response
 from pyngrok import ngrok
 from telegram import Update
 from dotenv import load_dotenv
-
+from kafkasend import send_to_kafka
 # Slack integration
 from slack_bolt import App as SlackApp
 from slack_bolt.adapter.fastapi import SlackRequestHandler
@@ -51,6 +51,21 @@ if SLACK_BOT_TOKEN and SLACK_SIGNING_SECRET and SLACK_BOT_TOKEN != "xoxb-your-to
     def handle_message_events(body, logger):
         print("------ NEW SLACK MESSAGE ------")
         print(body)
+        
+        # Convert to canonical event
+        canonical_event = slack_to_canonical(body)
+        
+        if canonical_event:
+            print("\n------ CANONICAL EVENT ------")
+            print(canonical_event.model_dump_json(indent=2))
+            
+            sendsuccessful=send_to_kafka(canonical_event)
+            if sendsuccessful:
+                print("succesfully send to kafka")
+            else :
+                print("failed to send data")
+        else:
+            print("Could not convert Slack message to canonical event")
 else:
     print("Warning: SLACK_BOT_TOKEN or SLACK_SIGNING_SECRET not set (or is default). Slack integration disabled.")
 
@@ -82,6 +97,7 @@ async def telegram_webhook(request: Request):
     try:
         data = await request.json()
         update = Update.de_json(data, ptb_app.bot)
+        print(update)
         await ptb_app.process_update(update)
     except Exception as e:
         print(f"Error processing Telegram update: {e}")
@@ -101,9 +117,12 @@ async def whatsapp_webhook(request: Request):
         if canonical_event:
             print("\n------ CANONICAL EVENT ------")
             print(canonical_event.model_dump_json(indent=2))
-            
-            # TODO: Send canonical_event to your processing pipeline
-            # e.g., await send_to_queue(canonical_event)
+            sendsuccessful=send_to_kafka(canonical_event)
+            if sendsuccessful:
+                print("succesfully send to kafka")
+            else :
+                print("failed to send data")
+                return Response(content="KAFKA_ERROR", status_code=500)
         else:
             print("Could not convert WhatsApp message to canonical event")
         
@@ -121,12 +140,6 @@ async def slack_events(req: Request):
     try:
         raw_body = await req.body()
         print(f"DEBUG: Active connection, body size: {len(raw_body)}")
-        # We must re-create the request stream so Bolt can read it again, 
-        # or rely on Bolt wrapper which handles this (SlackRequestHandler uses raw body).
-        # Actually, reading the body consumes the stream. Bolt's FastAPI adapter handles this carefully,
-        # but if WE read it, we might break Bolt if not careful.
-        # Let's NOT read the body here unless we are careful.
-        # Instead just print headers or something safe.
         print("DEBUG: Active connection")
     except Exception as e:
         print(f"DEBUG: Error reading request: {e}")

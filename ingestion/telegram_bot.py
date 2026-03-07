@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
 from converters import telegram_to_canonical
+from kafkasend import send_to_kafka
 
 load_dotenv()
 
@@ -59,9 +60,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             path = os.path.join(DOWNLOAD_DIR, msg.document.file_name)
             await file.download_to_drive(path)
             print(f"Document saved to: {path}")
+        sendsuccessful = send_to_kafka(canonical_event)
+        if sendsuccessful:
+            print("succesful sending kafka")
+        else :
+            print("failed to send to kafka")
         
-        # TODO: Send canonical_event to your processing pipeline
-        # e.g., await send_to_queue(canonical_event)
     else:
         print("Could not convert to canonical event")
 
