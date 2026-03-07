@@ -126,6 +126,7 @@ def telegram_to_canonical(update: Update) -> Optional[CanonicalEvent]:
     # Create canonical event
     canonical_event = CanonicalEvent(
         event_id=f"telegram_{msg.message_id}_{msg.chat.id}",
+        user_id=sender.id,
         platform="telegram",
         received_at=msg.date,
         sender=sender,
@@ -234,6 +235,7 @@ def whatsapp_to_canonical(data: dict) -> Optional[CanonicalEvent]:
         # Create canonical event
         canonical_event = CanonicalEvent(
             event_id=f"whatsapp_{message_id}",
+            user_id=sender.id,  # Map sender id to user_id
             platform="whatsapp",
             received_at=received_at,
             sender=sender,
@@ -295,6 +297,7 @@ def slack_to_canonical(data: dict) -> Optional[CanonicalEvent]:
         # Create canonical event
         canonical_event = CanonicalEvent(
             event_id=f"slack_{event_id}",
+            user_id=sender.id,
             platform="slack",
             received_at=received_at,
             sender=sender,

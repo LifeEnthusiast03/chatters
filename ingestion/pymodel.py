@@ -29,6 +29,7 @@ class Content(BaseModel):
 class CanonicalEvent(BaseModel):
     """Canonical event structure for cross-platform messaging"""
     event_id: str
+    user_id: str = Field(..., description="Unique user identifier for partitioning")
     platform: Literal["telegram", "slack", "whatsapp"]
     received_at: datetime
     sender: Sender
