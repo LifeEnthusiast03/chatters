@@ -33,12 +33,13 @@ def telegram_to_canonical(update: Update) -> Optional[CanonicalEvent]:
     
     if msg.text:
         event_type = "text_message"
-        description = f"Text message from {sender.display_name}"
+        description = msg.text
         text = msg.text
     
     elif msg.photo:
         event_type = "media"
-        description = f"Photo from {sender.display_name}"
+        # Placeholder till AI describes it
+        description = f"Photo from {sender.display_name} (AI Processing Pending...)"
         photo = msg.photo[-1]  # highest resolution
         media_items.append(MediaItem(
             type="photo",
@@ -245,4 +246,65 @@ def whatsapp_to_canonical(data: dict) -> Optional[CanonicalEvent]:
     
     except Exception as e:
         print(f"Error converting WhatsApp message: {e}")
+        return None
+
+
+def slack_to_canonical(data: dict) -> Optional[CanonicalEvent]:
+    """Convert Slack event payload to CanonicalEvent"""
+    try:
+        # Extract event data
+        event = data.get('event', {})
+        event_type_raw = event.get('type', '')
+        
+        # Only process message events
+        if event_type_raw != 'message':
+            return None
+        
+        # Skip bot messages to avoid loops
+        if event.get('bot_id') or event.get('subtype') == 'bot_message':
+            return None
+        
+        # Extract sender information
+        user_id = event.get('user', '')
+        # Slack doesn't provide display name in event, using user_id as display name
+        # In a real implementation, you'd fetch this from Slack's users.info API
+        sender = Sender(
+            id=user_id,
+            display_name=user_id,  # Could be enhanced with user.info API call
+            username=None
+        )
+        
+        # Extract message content
+        text = event.get('text', '')
+        timestamp = float(event.get('ts', '0'))
+        received_at = datetime.fromtimestamp(timestamp)
+        
+        # Extract additional context
+        channel_id = event.get('channel', '')
+        channel_type = event.get('channel_type', 'channel')
+        event_id = data.get('event_id', '')
+        
+        # Build content
+        content = Content(
+            text=text,
+            media_items=None,  # Could be enhanced to parse files from event
+            reply_to_id=event.get('thread_ts'),  # Thread parent message
+            forwarded_from=None
+        )
+        
+        # Create canonical event
+        canonical_event = CanonicalEvent(
+            event_id=f"slack_{event_id}",
+            platform="slack",
+            received_at=received_at,
+            sender=sender,
+            event_type="text_message",
+            description=f"Text message from {sender.display_name} in {channel_type}",
+            content=content
+        )
+        
+        return canonical_event
+    
+    except Exception as e:
+        print(f"Error converting Slack message: {e}")
         return None

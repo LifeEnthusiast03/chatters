@@ -409,7 +409,7 @@ if __name__ == "__main__":
 
     # 1. Define source: Read from 'input_events' topic
     source = KafkaSource.builder() \
-        .set_bootstrap_servers("kafka-1:29092,kafka-2:29092,kafka-3:29092") \
+        .set_bootstrap_servers("kafka-1:29092") \
         .set_topics("input_events") \
         .set_group_id("clustering_group") \
         .set_starting_offsets(OffsetsInitializer.earliest()) \
@@ -418,7 +418,7 @@ if __name__ == "__main__":
 
     # 2. Define sink: Write to 'clustered_events' topic
     sink = KafkaSink.builder() \
-        .set_bootstrap_servers("kafka-1:29092,kafka-2:29092,kafka-3:29092") \
+        .set_bootstrap_servers("kafka-1:29092") \
         .set_record_serializer(
             KafkaRecordSerializationSchema.builder()
             .set_topic("clustered_events")
