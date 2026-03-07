@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Send } from "lucide-react";
 
 export const Sidebar = ({ platformFilters, setPlatformFilters }: any) => {

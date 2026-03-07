@@ -1,3 +1,5 @@
 include:
+  - path: ./database/compose.yml
   - path: ./flink/compose.yml
+  - path: ./kafka/compose.yml
   - path: ./kafka/compose.yml

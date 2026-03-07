@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-dotenv
+python-telegram-bot
+kafka-python
+pydantic
+pyngrok
+slack_bolt
+transformers
+torch
+Pillow
+requests

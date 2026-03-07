@@ -32,7 +32,7 @@ export function AuthProvider({ children }: Props) {
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, _password: string) => {
 
     await new Promise((r) => setTimeout(r, 700));
 
