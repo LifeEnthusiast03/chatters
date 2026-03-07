@@ -1,0 +1,4 @@
+apache-flink==1.18.0
+numpy
+sentence-transformers
+redis
