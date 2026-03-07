@@ -1,54 +1,48 @@
-import React, { useState } from 'react';
-import { Send, Bot as BotIcon, MessageSquare } from 'lucide-react';
+import React, { useState } from "react";
+import { Send } from "lucide-react";
 
-interface SidebarProps {
-  platformFilters: {
-    whatsapp: boolean;
-    telegram: boolean;
-    slack: boolean;
-    others: boolean;
-  };
-  setPlatformFilters: React.Dispatch<React.SetStateAction<{
-    whatsapp: boolean;
-    telegram: boolean;
-    slack: boolean;
-    others: boolean;
-  }>>;
-}
+export const Sidebar = ({ platformFilters, setPlatformFilters }: any) => {
 
-export const Sidebar: React.FC<SidebarProps> = ({ platformFilters, setPlatformFilters }) => {
-  const [chatInput, setChatInput] = useState('');
-  const [chatHistory, setChatHistory] = useState<{ sender: 'user' | 'bot'; text: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
 
-  const togglePlatform = (key: keyof typeof platformFilters) => {
-    setPlatformFilters(prev => ({ ...prev, [key]: !prev[key] }));
+  const togglePlatform = (key: string) => {
+    setPlatformFilters((prev: any) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
   };
 
-  const handleSendMessage = () => {
+  const sendMessage = () => {
     if (!chatInput.trim()) return;
-    
-    setChatHistory([...chatHistory, { sender: 'user', text: chatInput }]);
-    setTimeout(() => {
-      setChatHistory(curr => [...curr, { sender: 'bot', text: `You asked: "${chatInput}". This is a placeholder response.` }]);
-    }, 1000);
-    setChatInput('');
+
+    setChatHistory((prev) => [
+      ...prev,
+      { sender: "user", text: chatInput },
+      { sender: "bot", text: "Demo assistant response." },
+    ]);
+
+    setChatInput("");
   };
 
   return (
-    <div className="bg-gray-50 border-l border-gray-200 h-screen w-80 p-4 fixed right-0 top-0 overflow-y-auto flex flex-col">
-      <div className="mb-8">
-        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <MessageSquare size={20} />
-          PLATFORM CARDS
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          {Object.entries(platformFilters).map(([key, value]) => (
+    <div className="h-screen bg-black/30 backdrop-blur-xl border-l border-white/10 p-6 flex flex-col gap-6">
+
+      {/* PLATFORM FILTERS */}
+      <div>
+        <h2 className="text-xs text-gray-400 uppercase mb-3">Platforms</h2>
+
+        <div className="grid grid-cols-2 gap-2">
+          {Object.keys(platformFilters).map((key) => (
             <button
               key={key}
-              onClick={() => togglePlatform(key as keyof typeof platformFilters)}
-              className={`p-3 rounded-lg border text-sm font-medium transition-all uppercase flex items-center justify-center gap-2
-                ${value ? 'bg-blue-600 text-white border-blue-700 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
-              `}
+              onClick={() => togglePlatform(key)}
+              className={`px-3 py-2 rounded-lg border text-xs
+              ${
+                platformFilters[key]
+                  ? "bg-indigo-500/20 border-indigo-400"
+                  : "border-white/10 text-gray-500"
+              }`}
             >
               {key}
             </button>
@@ -56,48 +50,52 @@ export const Sidebar: React.FC<SidebarProps> = ({ platformFilters, setPlatformFi
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col border-t pt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <BotIcon size={20} />
-          QUERY CHATBOT
+      {/* CHAT */}
+      <div className="flex flex-col flex-1">
+
+        <h2 className="text-xs text-gray-400 uppercase mb-3">
+          Query Assistant
         </h2>
-        
-        <div className="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 custom-scrollbar">
-          {chatHistory.length === 0 ? (
-            <div className="text-center text-gray-400 text-sm italic mt-10">
-              Ask me anything about the messages...
+
+        <div className="flex-1 overflow-y-auto space-y-2 text-sm text-gray-300">
+          {chatHistory.length === 0 && (
+            <div className="text-gray-500 text-xs mt-10 text-center">
+              Ask things like:
+              <br />
+              "Show critical alerts"
             </div>
-          ) : (
-            chatHistory.map((msg, idx) => (
-              <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-3 rounded-lg text-sm ${
-                  msg.sender === 'user' 
-                    ? 'bg-blue-600 text-white rounded-br-none' 
-                    : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                }`}>
-                  {msg.text}
-                </div>
-              </div>
-            ))
           )}
+
+          {chatHistory.map((msg, i) => (
+            <div
+              key={i}
+              className={`p-2 rounded-lg ${
+                msg.sender === "user"
+                  ? "bg-indigo-500/20 self-end"
+                  : "bg-white/5"
+              }`}
+            >
+              {msg.text}
+            </div>
+          ))}
         </div>
 
-        <div className="relative">
+        <div className="flex mt-3 gap-2">
           <input
-            type="text"
-            className="w-full p-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-400 text-sm"
-            placeholder="Type your query..."
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs outline-none"
+            placeholder="Ask something..."
           />
+
           <button
-            onClick={handleSendMessage}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+            onClick={sendMessage}
+            className="w-8 h-8 flex items-center justify-center bg-indigo-600 rounded-lg"
           >
-            <Send size={18} />
+            <Send size={14} />
           </button>
         </div>
+
       </div>
     </div>
   );
