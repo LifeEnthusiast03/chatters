@@ -1,0 +1,8 @@
+kafka-python
+redis
+python-dotenv
+requests
+fastapi
+uvicorn
+nltk
+scikit-learn

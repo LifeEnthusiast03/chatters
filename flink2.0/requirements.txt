@@ -1,0 +1,5 @@
+kafka-python
+redis
+numpy
+sentence-transformers
+python-dotenv
