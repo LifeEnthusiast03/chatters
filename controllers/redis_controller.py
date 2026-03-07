@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from redis.redis_client import redis_client
+from databse.redis_client import redis_client
 
 
 async def set_value(key: str, value: str):
