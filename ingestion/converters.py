@@ -33,12 +33,13 @@ def telegram_to_canonical(update: Update) -> Optional[CanonicalEvent]:
     
     if msg.text:
         event_type = "text_message"
-        description = f"Text message from {sender.display_name}"
+        description = msg.text
         text = msg.text
     
     elif msg.photo:
         event_type = "media"
-        description = f"Photo from {sender.display_name}"
+        # Placeholder till AI describes it
+        description = f"Photo from {sender.display_name} (AI Processing Pending...)"
         photo = msg.photo[-1]  # highest resolution
         media_items.append(MediaItem(
             type="photo",
